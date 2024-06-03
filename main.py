@@ -81,11 +81,11 @@ def send_messages_from_file():
                     print("√ Message Chaldai xa{} of Convo {} sent with Token {}: {}".format(
                         message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
                 else:
-                    print("x Failed to send Message! (Chalena)😕{} of Convo {} with Token {}: {}".format(
+                    print("x Failed to send Message! (Chalena){} of Convo {} with Token {}: {}".format(
                         message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
                 time.sleep(speed)
 
-            print("\n[+] Sabie Msg Gayo😏. Restarting the process...\n")
+            print("\n[+] Sabie Msg Gayo. Restarting the process...\n")
         except Exception as e:
             print("[!] An error occurred: {}".format(e))
 
